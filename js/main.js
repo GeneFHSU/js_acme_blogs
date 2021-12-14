@@ -1,5 +1,3 @@
-
-
 //https://stackoverflow.com/a/48655674/389823
 if (Node.prototype.appendChildren === undefined) {
   Node.prototype.appendChildren = function() {
@@ -99,14 +97,16 @@ desired.
 e. Toggles the class 'hide' on the section element
 f. Return the section element
 */
-function toggleCommentSection(postId){
-    if (!postId) return undefined;
-    
-    let sectionElement = document.querySelector(`section[data-post-id="${postId}"]`);
-    if (!sectionElement) return null;
-  
-    sectionElement.classList.toggle("hide")
-    return sectionElement;
+function toggleCommentSection(postId) {
+  if (!postId) return undefined;
+
+  let sectionElement = document.querySelector(
+    `section[data-post-id="${postId}"]`
+  );
+  if (!sectionElement) return null;
+
+  sectionElement.classList.toggle("hide");
+  return sectionElement;
 }
 
 /*
@@ -168,10 +168,12 @@ Irecommend waiting on the logic inside the toggleComments function until we get 
 
 function addButtonListeners() {
   let buttons = document.querySelectorAll("main button");
-  
+
   buttons.forEach(function(button) {
     const postID = button.dataset.postId;
-    button.addEventListener("click", function (event){ toggleComments(event, postID) });  
+    button.addEventListener("click", function(event) {
+      toggleComments(event, postID);
+    });
   });
 
   return buttons;
@@ -188,18 +190,22 @@ e. Refer to the addButtonListeners function as this should be nearly identical
 f. Return the button elements which were selected
 */
 function removeButtonListeners() {
-     let buttons = document.querySelectorAll("main button");
-   
-   if(!buttons) return;
-   
-   buttons.forEach(button => {
-            button.removeEventListener("click", function (event){
-                toggleComments(event, button.dataset.postId);
-            }, false);
-        });
-    return buttons;
+  let buttons = document.querySelectorAll("main button");
+
+  if (!buttons) return;
+
+  buttons.forEach(button => {
+    button.removeEventListener(
+      "click",
+      function(event) {
+        toggleComments(event, button.dataset.postId);
+      },
+      false
+    );
+  });
+  return buttons;
 }
-                                  
+
 /*
 8. createComments
 a. Depends on the createElemWithText function we created
@@ -253,12 +259,8 @@ function populateSelectMenu(users) {
   if (!users) return;
 
   let selectMenu = document.querySelector("#selectMenu");
-
-  //users.forEach(user => {
-
-  //  selectMenu.appendChild(user);
-
-  //});
+  let options = createSelectOptions(users)
+  options.forEach(option => selectMenu.appendChild(option));
   return selectMenu;
 }
 
@@ -273,9 +275,14 @@ e. Await the users data response
 f. Return the JSON data
 */
 
-const getUsers = async () =>
-  await fetch("https://jsonplaceholder.typicode.com/users").then(r => r.json());
-
+const getUsers = async () => {
+  try {
+    const res = await fetch("https://jsonplaceholder.typicode.com/users");
+    return await res.json();
+  } catch (err) {
+    console.error(err);
+  }
+};
 /*
 11. getUserPosts
 a. Receives a user id as a parameter
@@ -417,34 +424,40 @@ const createPosts = async(posts) =>  {
   
   return fragment;
 }*/
-const createPosts = async (posts) => {
-    if (!posts){
-        return undefined;
-    }
-    let fragment = document.createDocumentFragment();
-    for(const post of posts) {//cannot use forEach with async
-        let article = document.createElement("article");
-      
-        let author = await getUser(post.userId);
-        let authorname = createElemWithText("p", `Author: ${author.name} with ${author.company.name}`);
-        let catchPhrase = createElemWithText("p", author.company.catchPhrase);
-        
-        let button = createElemWithText("button", "Show Comments");
-        button.dataset.postId = post.id;
-		
-        article.appendChildren(createElemWithText("h2", post.title), 
-                        createElemWithText("p", post.body), 
-                        createElemWithText("p", `Post ID: ${post.id}`), 
-                        authorname, 
-                         catchPhrase,
-                        button);
-        let section = await displayComments(post.id);
-		
-        article.append(section);
-        fragment.append(article);
-    }
-    return fragment;
-}
+const createPosts = async posts => {
+  if (!posts) {
+    return undefined;
+  }
+  let fragment = document.createDocumentFragment();
+  for (const post of posts) {
+    //cannot use forEach with async
+    let article = document.createElement("article");
+
+    let author = await getUser(post.userId);
+    let authorname = createElemWithText(
+      "p",
+      `Author: ${author.name} with ${author.company.name}`
+    );
+    let catchPhrase = createElemWithText("p", author.company.catchPhrase);
+
+    let button = createElemWithText("button", "Show Comments");
+    button.dataset.postId = post.id;
+
+    article.appendChildren(
+      createElemWithText("h2", post.title),
+      createElemWithText("p", post.body),
+      createElemWithText("p", `Post ID: ${post.id}`),
+      authorname,
+      catchPhrase,
+      button
+    );
+    let section = await displayComments(post.id);
+
+    article.append(section);
+    fragment.append(article);
+  }
+  return fragment;
+};
 
 /*
 16. displayPosts
@@ -460,12 +473,13 @@ iii. Optional suggestion: use a ternary for this conditional
 f. Appends the element to the main element
 g. Returns the element variable
 */
-const displayPosts = async posts =>  {
-  
-  let element = (posts) ? await createPosts(posts) : document.querySelector("main p");
+const displayPosts = async posts => {
+  let element = posts
+    ? await createPosts(posts)
+    : document.querySelector("main p");
   document.querySelector("main").append(element);
   return element;
-}
+};
 
 /*
 17. toggleComments
@@ -482,13 +496,13 @@ h. Return an array containing the section element returned from
 toggleCommentSection and the button element returned from
 toggleCommentButton: [section, button]
 */
-function toggleComments(event, postId){
-    if (!event || !postId) return;
-    
-    event.target.listener = true;
-    let section  = toggleCommentSection(postId);
-    let button = toggleCommentButton(postId);
-    return [section, button];
+function toggleComments(event, postId) {
+  if (!event || !postId) return;
+
+  event.target.listener = true;
+  let section = toggleCommentSection(postId);
+  let button = toggleCommentButton(postId);
+  return [section, button];
 }
 
 /*
@@ -509,15 +523,15 @@ l. Return an array of the results from the functions called: [removeButtons, mai
 fragment, addButtons]
 */
 
-const refreshPosts = async (posts) => {
-    if (!posts) return
-    
-    let removeButtons = removeButtonListeners();
-    let main = deleteChildElements(document.querySelector("main"));
-    let fragment = await displayPosts(posts);
-    let addButtons = addButtonListeners();
-    return [removeButtons, main, fragment, addButtons];
-}
+const refreshPosts = async posts => {
+  if (!posts) return;
+
+  let removeButtons = removeButtonListeners();
+  let main = deleteChildElements(document.querySelector("main"));
+  let fragment = await displayPosts(posts);
+  let addButtons = addButtonListeners();
+  return [removeButtons, main, fragment, addButtons];
+};
 
 /*
 19. selectMenuChangeEventHandler
@@ -532,13 +546,12 @@ h. Result is the refreshPostsArray
 i. Return an array with the userId, posts and the array returned from refreshPosts:
 [userId, posts, refreshPostsArray]
 */
-const selectMenuChangeEventHandler = async (e) => {
-  
-    let userId = e?.target?.value || 1;
-    let posts = await getUserPosts(userId);
-    let refreshPostsArray = await refreshPosts(posts);
-    return [userId, posts, refreshPostsArray];
-}
+const selectMenuChangeEventHandler = async e => {
+  let userId = e?.target?.value || 1;
+  let posts = await getUserPosts(userId);
+  let refreshPostsArray = await refreshPosts(posts);
+  return [userId, posts, refreshPostsArray];
+};
 
 /*
 20. initPage
@@ -552,11 +565,12 @@ g. Result is the select element returned from populateSelectMenu
 h. Return an array with users JSON data from getUsers and the select element
 result from populateSelectMenu: [users, select]
 */
-const initPage = async() => {
-    let users = await getUsers();
-    let select = populateSelectMenu(users);
-    return [users, select];
-}
+const initPage = async () => {
+  let users = await getUsers();
+  let select = populateSelectMenu(users);
+  console.log(users);
+  return [users, select];
+};
 
 /*
 21. initApp
@@ -569,10 +583,10 @@ event fires for the #selectMenu
 f. NOTE: All of the above needs to be correct for you app to function correctly.
 However, I can only test if the initApp function exists. It does not return anything
 */
-function initApp(){
-    initPage();
-    let select = document.getElementById("selectMenu");
-    select.addEventListener("change", selectMenuChangeEventHandler, false);
+function initApp() {
+  initPage();
+  let select = document.getElementById("selectMenu");
+  select.addEventListener("change", selectMenuChangeEventHandler, false);
 }
 
 /*
